@@ -1,0 +1,93 @@
+image: rust:1.42.0-buster
+
+stages:
+  - test
+  - bump_version
+  - release
+  - release_notify
+
+test:
+  stage: test
+  only:
+    refs:
+      - merge_requests
+    changes:
+      - src/**/*
+
+  script:
+    - cargo test
+
+bump_version:
+  stage: bump_version
+  only:
+    refs:
+      - triggers
+    variables:
+      - $RELEASE
+
+  image: buildpack-deps:buster-scm
+
+  before_script:
+    - git config user.email admin@getto.systems
+    - git config user.name getto
+    - curl https://trellis.getto.systems/git/post/1.0.0/setup.sh | bash -s -- ./vendor/getto-systems
+    - export PATH=$PATH:./vendor/getto-systems/git-post/bin
+  script:
+    - curl https://trellis.getto.systems/ci/bump-version/1.2.2/bump_version.sh | bash
+    - curl https://trellis.getto.systems/ci/bump-version/1.2.2/request.sh | bash -s -- ./.bump-message.sh
+
+release:
+  stage: release
+  only:
+    refs:
+      - master@shun-fix9-base/labo/open-data-structures/rust
+    changes:
+      - .release-version
+  except:
+    refs:
+      - triggers
+      - schedules
+
+  script:
+    - cargo test
+    - curl https://trellis.getto.systems/ci/bump-version/1.2.2/push_tags.sh | bash
+
+release_success:
+  stage: release_notify
+  only:
+    refs:
+      - master@shun-fix9-base/labo/open-data-structures/rust
+    changes:
+      - .release-version
+  except:
+    refs:
+      - triggers
+      - schedules
+  when: on_success
+
+  image: buildpack-deps:buster-curl
+
+  before_script:
+    - export channel=$SLACK_CHANNEL
+  script:
+    - curl https://trellis.getto.systems/psycher/getto/2.5.6/notify-release.sh | bash -s -- -l $GETTO_PSYCHER_URL?$GETTO_PSYCHER_TOKEN=true success
+
+release_failure:
+  stage: release_notify
+  only:
+    refs:
+      - master@shun-fix9-base/labo/open-data-structures/rust
+    changes:
+      - .release-version
+  except:
+    refs:
+      - triggers
+      - schedules
+  when: on_failure
+
+  image: buildpack-deps:buster-curl
+
+  before_script:
+    - export channel=$SLACK_CHANNEL
+  script:
+    - curl https://trellis.getto.systems/psycher/getto/2.5.6/notify-release.sh | bash -s -- -l $GETTO_PSYCHER_URL?$GETTO_PSYCHER_TOKEN=true failure
