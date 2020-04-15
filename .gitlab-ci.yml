@@ -34,7 +34,7 @@ bump_version:
     - export PATH=$PATH:./vendor/getto-systems/git-post/bin
   script:
     - curl https://trellis.getto.systems/ci/bump-version/1.2.2/bump_version.sh | bash
-    - curl https://trellis.getto.systems/ci/bump-version/1.2.2/request.sh | bash -s -- ./.bump-message.sh
+    - curl https://trellis.getto.systems/ci/bump-version/1.2.2/request.sh | bash -s -- ./.message/bump.sh
 
 release:
   stage: release
