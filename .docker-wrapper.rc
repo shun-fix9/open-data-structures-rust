@@ -1,0 +1,1 @@
+DOCKER_WRAPPER_IMAGE_rust(){ echo "rust:1.42.0-buster"; }
