@@ -24,7 +24,7 @@ impl<'a, T> Array<'a, T> {
     }
 
     pub fn set(&mut self, index: usize, item: &'a T) -> Result<(), Error> {
-        if index >= 0 && index < self.length {
+        if index < self.length {
             self.items[index] = Entry::Item(item);
             Ok(())
         } else {
