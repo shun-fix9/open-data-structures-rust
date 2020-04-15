@@ -1,18 +1,18 @@
 #[derive(Debug)]
-pub struct Array<'a, T> {
+pub(in crate) struct Array<'a, T> {
     items: Vec<Entry<'a, T>>,
     length: usize,
 }
 
 impl<'a, T> Array<'a, T> {
-    pub fn new(length: usize) -> Array<'a, T> {
+    pub(in crate) fn new(length: usize) -> Array<'a, T> {
         Array {
             items: vec![Entry::default(); length],
             length: length,
         }
     }
 
-    pub fn get(&self, index: usize) -> Option<Entry<'a, T>> {
+    pub(in crate) fn get(&self, index: usize) -> Option<Entry<'a, T>> {
         if let Some(entry) = self.items.get(index) {
             match entry {
                 Entry::Empty => Some(Entry::Empty),
@@ -23,7 +23,7 @@ impl<'a, T> Array<'a, T> {
         }
     }
 
-    pub fn set(&mut self, index: usize, item: &'a T) -> Result<(), Error> {
+    pub(in crate) fn set(&mut self, index: usize, item: &'a T) -> Result<(), Error> {
         if index < self.length {
             self.items[index] = Entry::Item(item);
             Ok(())
@@ -32,7 +32,7 @@ impl<'a, T> Array<'a, T> {
         }
     }
 
-    pub fn drain<'b>(&mut self, other: Array<'b, T>)
+    pub(in crate) fn drain<'b>(&mut self, other: Array<'b, T>)
     where
         'b: 'a,
     {
@@ -42,7 +42,7 @@ impl<'a, T> Array<'a, T> {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum Entry<'a, T> {
+pub(in crate) enum Entry<'a, T> {
     Empty,
     Item(&'a T),
 }
@@ -63,11 +63,11 @@ impl<'a, T> Clone for Entry<'a, T> {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Error {
+pub(in crate) struct Error {
     message: &'static str,
 }
 
-pub const OutOfBoundError: Error = Error {
+pub(in crate) const OutOfBoundError: Error = Error {
     message: "out of bound",
 };
 
