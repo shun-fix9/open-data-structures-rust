@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
+pub mod array_deque;
 pub mod array_queue;
 pub mod array_stack;
 mod backend;
@@ -16,10 +17,10 @@ pub trait Stack<T> {
 }
 
 pub trait Deque<T> {
-    fn addFirst(&mut self, x: T);
-    fn addLast(&mut self, x: T);
-    fn removeFirst(&mut self) -> Option<T>;
-    fn removeLast(&mut self) -> Option<T>;
+    fn add_first(&mut self, x: T);
+    fn add_last(&mut self, x: T);
+    fn remove_first(&mut self) -> Option<T>;
+    fn remove_last(&mut self) -> Option<T>;
 }
 
 pub trait List<T> {

@@ -147,7 +147,6 @@ mod tests {
     pub fn stack() {
         let mut stack = ArrayStack::new();
         assert_eq!(stack.size(), 0);
-        assert_eq!(stack.backend_len(), 2);
 
         stack.push(1);
         stack.push(2);
@@ -156,53 +155,30 @@ mod tests {
         stack.push(5);
 
         assert_eq!(stack.size(), 5);
-        assert_eq!(stack.backend_len(), 8);
 
-        check(
-            &stack,
-            vec![
-                (0, Some(&1)),
-                (1, Some(&2)),
-                (2, Some(&3)),
-                (3, Some(&4)),
-                (4, Some(&5)),
-                (5, None),
-            ],
-        );
+        assert_eq!(stack.get(0), Some(&1));
+        assert_eq!(stack.get(1), Some(&2));
+        assert_eq!(stack.get(2), Some(&3));
+        assert_eq!(stack.get(3), Some(&4));
+        assert_eq!(stack.get(4), Some(&5));
+        assert_eq!(stack.get(5), None);
 
         assert_eq!(stack.pop(), Some(5));
         assert_eq!(stack.pop(), Some(4));
 
         assert_eq!(stack.size(), 3);
 
-        check(
-            &stack,
-            vec![
-                (0, Some(&1)),
-                (1, Some(&2)),
-                (2, Some(&3)),
-                (3, None),
-                (4, None),
-                (5, None),
-            ],
-        );
+        assert_eq!(stack.get(0), Some(&1));
+        assert_eq!(stack.get(1), Some(&2));
+        assert_eq!(stack.get(2), Some(&3));
+        assert_eq!(stack.get(3), None);
+        assert_eq!(stack.get(4), None);
+        assert_eq!(stack.get(5), None);
 
         assert_eq!(stack.pop(), Some(3));
-        assert_eq!(stack.backend_len(), 4);
-
         assert_eq!(stack.pop(), Some(2));
         assert_eq!(stack.pop(), Some(1));
 
         assert_eq!(stack.size(), 0);
-        assert_eq!(stack.backend_len(), 1);
-    }
-
-    fn check<T>(stack: &ArrayStack<T>, items: Vec<(usize, Option<&T>)>)
-    where
-        T: std::fmt::Debug + std::cmp::PartialEq,
-    {
-        for (i, entry) in items.iter() {
-            assert_eq!(stack.get(*i), *entry);
-        }
     }
 }
