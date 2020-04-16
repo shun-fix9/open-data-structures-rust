@@ -36,13 +36,13 @@ impl<T> List<T> for ArrayStack<T> {
     }
 
     fn get(&self, index: usize) -> Option<&T> {
-        if index < self.size() {
-            match self.array.get(index) {
-                Some(Entry::Item(item)) => Some(item),
-                _ => unreachable!(),
-            }
-        } else {
-            None
+        if index >= self.size() {
+            return None;
+        }
+
+        match self.array.get(index) {
+            Some(Entry::Item(item)) => Some(item),
+            _ => unreachable!(),
         }
     }
 
