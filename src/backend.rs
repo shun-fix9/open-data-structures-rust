@@ -60,7 +60,10 @@ impl<T> Array<T> {
     pub(in crate) fn shift_right(&mut self, from: usize, to: usize) {
         let mut target_index = to;
         while target_index > from {
-            self.items.swap(target_index - 1, target_index);
+            let source = (target_index - 1) % self.items.len();
+            let destination = target_index % self.items.len();
+
+            self.items.swap(source, destination);
             target_index -= 1;
         }
     }
@@ -68,22 +71,27 @@ impl<T> Array<T> {
     pub(in crate) fn shift_left(&mut self, from: usize, to: usize) {
         let mut target_index = from;
         while target_index < to {
-            self.items.swap(target_index, target_index + 1);
+            let source = (target_index + 1) % self.items.len();
+            let destination = target_index % self.items.len();
+
+            self.items.swap(destination, source);
             target_index += 1;
         }
     }
 
-    pub(in crate) fn resize(&mut self, from: usize, to: usize) {
-        let mut new_items = Self::new_items(to);
+    pub(in crate) fn resize(&mut self, new_size: usize, start_at: usize, copy_length: usize) {
+        let mut new_items = Self::new_items(new_size);
 
-        let mut index = 0;
-        while index < from {
-            std::mem::swap(&mut self.items[index], &mut new_items[index]);
-            index += 1;
+        let mut count = 0;
+        while count < copy_length {
+            let target_index = (start_at + count) % self.items.len();
+
+            std::mem::swap(&mut self.items[target_index], &mut new_items[count]);
+            count += 1;
         }
 
         self.items = new_items;
-        self.length = to;
+        self.length = new_size;
     }
 }
 
@@ -254,11 +262,12 @@ mod tests {
         assert_eq!(array.set(1, 2), Ok(()));
         assert_eq!(array.set(2, 3), Ok(()));
 
-        let from = 2;
-        let to = 4;
-        array.resize(from, to);
+        let new_size = 4;
+        let start_at = 0;
+        let copy_length = 2;
+        array.resize(new_size, start_at, copy_length);
 
-        assert_eq!(array.len(), to);
+        assert_eq!(array.len(), new_size);
 
         check(
             &array,
