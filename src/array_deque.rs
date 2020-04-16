@@ -35,6 +35,14 @@ impl<T> ArrayDeque<T> {
     fn is_first_half(&self, index: usize) -> bool {
         index < self.size() / 2
     }
+
+    fn increment_index(&mut self) {
+        self.index = self.backend_index(1);
+    }
+
+    fn decrement_index(&mut self) {
+        self.index = self.backend_index(self.backend_len() - 1);
+    }
 }
 
 impl<T> List<T> for ArrayDeque<T> {
@@ -74,8 +82,8 @@ impl<T> List<T> for ArrayDeque<T> {
         }
 
         if self.is_first_half(index) {
-            self.shift_left(self.backend_len() - 1, index + self.backend_len() - 1);
-            self.index = self.backend_index(self.backend_len() - 1);
+            self.shift_left_underflow(index);
+            self.decrement_index();
         } else {
             self.shift_right(index, self.size());
         }
@@ -94,7 +102,7 @@ impl<T> List<T> for ArrayDeque<T> {
             Some(Entry::Item(item)) => {
                 if self.is_first_half(index) {
                     self.shift_right(0, index);
-                    self.index = self.backend_index(1);
+                    self.increment_index();
                 } else {
                     self.shift_left(index, self.size());
                 }
@@ -113,25 +121,25 @@ impl<T> List<T> for ArrayDeque<T> {
 }
 
 impl<T> Deque<T> for ArrayDeque<T> {
-    fn addFirst(&mut self, x: T) {
+    fn add_first(&mut self, x: T) {
         match self.add(0, x) {
             Ok(()) => (),
             _ => unreachable!(),
         }
     }
 
-    fn addLast(&mut self, x: T) {
+    fn add_last(&mut self, x: T) {
         match self.add(self.size(), x) {
             Ok(()) => (),
             _ => unreachable!(),
         }
     }
 
-    fn removeFirst(&mut self) -> Option<T> {
+    fn remove_first(&mut self) -> Option<T> {
         self.remove(0)
     }
 
-    fn removeLast(&mut self) -> Option<T> {
+    fn remove_last(&mut self) -> Option<T> {
         self.remove(self.size() - 1)
     }
 }
@@ -172,6 +180,10 @@ impl<T> ArrayDeque<T> {
         self.backend
             .shift_left(self.backend_index(from), self.backend_index(to));
     }
+
+    fn shift_left_underflow(&mut self, index: usize) {
+        self.shift_left(self.backend_len() - 1, index + self.backend_len() - 1);
+    }
 }
 
 #[cfg(test)]
@@ -185,11 +197,11 @@ mod tests {
         let mut deque = ArrayDeque::new();
         assert_eq!(deque.size(), 0);
 
-        deque.addLast(1);
-        deque.addLast(2);
-        deque.addLast(3);
-        deque.addFirst(4);
-        deque.addFirst(5);
+        deque.add_last(1);
+        deque.add_last(2);
+        deque.add_last(3);
+        deque.add_first(4);
+        deque.add_first(5);
 
         assert_eq!(deque.size(), 5);
 
@@ -200,8 +212,8 @@ mod tests {
         assert_eq!(deque.get(4), Some(&3));
         assert_eq!(deque.get(5), None);
 
-        assert_eq!(deque.removeLast(), Some(3));
-        assert_eq!(deque.removeLast(), Some(2));
+        assert_eq!(deque.remove_last(), Some(3));
+        assert_eq!(deque.remove_last(), Some(2));
 
         assert_eq!(deque.size(), 3);
 
@@ -212,9 +224,9 @@ mod tests {
         assert_eq!(deque.get(4), None);
         assert_eq!(deque.get(5), None);
 
-        assert_eq!(deque.removeFirst(), Some(5));
-        assert_eq!(deque.removeFirst(), Some(4));
-        assert_eq!(deque.removeFirst(), Some(1));
+        assert_eq!(deque.remove_first(), Some(5));
+        assert_eq!(deque.remove_first(), Some(4));
+        assert_eq!(deque.remove_first(), Some(1));
 
         assert_eq!(deque.size(), 0);
     }

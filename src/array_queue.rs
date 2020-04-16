@@ -31,6 +31,10 @@ impl<T> ArrayQueue<T> {
     fn backend_index(&self, index: usize) -> usize {
         (index + self.index) % self.backend_len()
     }
+
+    fn increment_index(&mut self) {
+        self.index = self.backend_index(1);
+    }
 }
 
 impl<T> List<T> for ArrayQueue<T> {
@@ -83,7 +87,7 @@ impl<T> List<T> for ArrayQueue<T> {
         match self.backend.remove(self.backend_index(index)) {
             Some(Entry::Item(item)) => {
                 self.shift_right(0, index);
-                self.index = self.backend_index(1);
+                self.increment_index();
                 self.size -= 1;
 
                 if self.is_size_down_required() {
