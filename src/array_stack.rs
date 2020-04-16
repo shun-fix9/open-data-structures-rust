@@ -1,9 +1,7 @@
-use crate::backend::Array;
-use crate::backend::Entry;
+use crate::backend::{Array, Entry};
 use crate::CollectionError;
-use crate::List;
-use crate::Stack;
 use crate::OUT_OF_BOUND_ERROR;
+use crate::{List, Stack};
 
 const DEFAULT_BACKEND_SIZE: usize = 2;
 const SIZE_UP_MULTIPLIER_NUMBER: usize = 2;
