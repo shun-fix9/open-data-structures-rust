@@ -67,7 +67,6 @@ impl<T> List<T> for ArrayStack<T> {
         }
 
         self.array.shift_right(index, self.size());
-
         self.size += 1;
 
         match self.array.set(index, item) {
@@ -77,23 +76,22 @@ impl<T> List<T> for ArrayStack<T> {
     }
 
     fn remove(&mut self, index: usize) -> Option<T> {
-        if index < self.size() {
-            match self.array.remove(index) {
-                Some(Entry::Item(item)) => {
-                    self.array.shift_left(index, self.size());
+        if index >= self.size() {
+            return None;
+        }
 
-                    self.size -= 1;
+        match self.array.remove(index) {
+            Some(Entry::Item(item)) => {
+                self.array.shift_left(index, self.size());
+                self.size -= 1;
 
-                    if self.size() * SIZE_DOWN_THRESHOLD < self.array.len() {
-                        self.size_down();
-                    }
-
-                    Some(item)
+                if self.size() * SIZE_DOWN_THRESHOLD < self.array.len() {
+                    self.size_down();
                 }
-                _ => unreachable!(),
+
+                Some(item)
             }
-        } else {
-            None
+            _ => unreachable!(),
         }
     }
 }

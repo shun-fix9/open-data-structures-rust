@@ -104,12 +104,6 @@ pub(in crate) struct BackendError {
     message: &'static str,
 }
 
-impl BackendError {
-    pub(in crate) const fn message(&self) -> &'static str {
-        self.message
-    }
-}
-
 impl fmt::Display for BackendError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "error: {}", self.message)
