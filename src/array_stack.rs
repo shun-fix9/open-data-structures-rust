@@ -6,27 +6,26 @@ use crate::Stack;
 use crate::OUT_OF_BOUND_ERROR;
 
 const DEFAULT_BACKEND_SIZE: usize = 2;
-const SIZE_UP_MULTIPLIER_FACTOR: usize = 2;
+const SIZE_UP_MULTIPLIER_NUMBER: usize = 2;
 const SIZE_DOWN_THRESHOLD: usize = 3;
-const SIZE_DOWN_DIVISION_FACTOR: usize = 2;
+const SIZE_DOWN_DIVISION_NUMBER: usize = 2;
 
 #[derive(Debug)]
 pub struct ArrayStack<T> {
-    array: Array<T>,
+    backend: Array<T>,
     size: usize,
 }
 
 impl<T> ArrayStack<T> {
     pub fn new() -> ArrayStack<T> {
         ArrayStack {
-            array: Array::new(DEFAULT_BACKEND_SIZE),
+            backend: Array::new(DEFAULT_BACKEND_SIZE),
             size: 0,
         }
     }
 
-    #[allow(dead_code)]
     fn backend_len(&self) -> usize {
-        self.array.len()
+        self.backend.len()
     }
 }
 
@@ -40,7 +39,7 @@ impl<T> List<T> for ArrayStack<T> {
             return None;
         }
 
-        match self.array.get(index) {
+        match self.backend.get(index) {
             Some(Entry::Item(item)) => Some(item),
             _ => unreachable!(),
         }
@@ -51,7 +50,7 @@ impl<T> List<T> for ArrayStack<T> {
             return Err(OUT_OF_BOUND_ERROR);
         }
 
-        match self.array.set(index, item) {
+        match self.backend.set(index, item) {
             Ok(()) => Ok(()),
             _ => unreachable!(),
         }
@@ -76,7 +75,7 @@ impl<T> List<T> for ArrayStack<T> {
             return None;
         }
 
-        match self.array.remove(index) {
+        match self.backend.remove(index) {
             Some(Entry::Item(item)) => {
                 self.shift_left_to(index);
 
@@ -106,30 +105,30 @@ impl<T> Stack<T> for ArrayStack<T> {
 
 impl<T> ArrayStack<T> {
     fn is_size_up_required(&self) -> bool {
-        self.size() == self.array.len()
+        self.size() == self.backend_len()
     }
 
     fn is_size_down_required(&self) -> bool {
-        self.size() * SIZE_DOWN_THRESHOLD < self.array.len()
+        self.size() * SIZE_DOWN_THRESHOLD < self.backend_len()
     }
 
     fn size_up(&mut self) {
-        self.array
-            .resize(self.size(), self.array.len() * SIZE_UP_MULTIPLIER_FACTOR);
+        self.backend
+            .resize(self.size(), self.backend_len() * SIZE_UP_MULTIPLIER_NUMBER);
     }
 
     fn size_down(&mut self) {
-        self.array
-            .resize(self.size(), self.array.len() / SIZE_DOWN_DIVISION_FACTOR);
+        self.backend
+            .resize(self.size(), self.backend_len() / SIZE_DOWN_DIVISION_NUMBER);
     }
 
     fn shift_right_from(&mut self, index: usize) {
-        self.array.shift_right(index, self.size());
+        self.backend.shift_right(index, self.size());
         self.size += 1;
     }
 
     fn shift_left_to(&mut self, index: usize) {
-        self.array.shift_left(index, self.size());
+        self.backend.shift_left(index, self.size());
         self.size -= 1;
     }
 }
@@ -142,21 +141,21 @@ mod tests {
 
     #[test]
     pub fn stack() {
-        let mut array = ArrayStack::new();
-        assert_eq!(array.size(), 0);
-        assert_eq!(array.backend_len(), 2);
+        let mut stack = ArrayStack::new();
+        assert_eq!(stack.size(), 0);
+        assert_eq!(stack.backend_len(), 2);
 
-        array.push(1);
-        array.push(2);
-        array.push(3);
-        array.push(4);
-        array.push(5);
+        stack.push(1);
+        stack.push(2);
+        stack.push(3);
+        stack.push(4);
+        stack.push(5);
 
-        assert_eq!(array.size(), 5);
-        assert_eq!(array.backend_len(), 8);
+        assert_eq!(stack.size(), 5);
+        assert_eq!(stack.backend_len(), 8);
 
         check(
-            &array,
+            &stack,
             vec![
                 (0, Some(&1)),
                 (1, Some(&2)),
@@ -167,13 +166,13 @@ mod tests {
             ],
         );
 
-        assert_eq!(array.pop(), Some(5));
-        assert_eq!(array.pop(), Some(4));
+        assert_eq!(stack.pop(), Some(5));
+        assert_eq!(stack.pop(), Some(4));
 
-        assert_eq!(array.size(), 3);
+        assert_eq!(stack.size(), 3);
 
         check(
-            &array,
+            &stack,
             vec![
                 (0, Some(&1)),
                 (1, Some(&2)),
@@ -184,22 +183,22 @@ mod tests {
             ],
         );
 
-        assert_eq!(array.pop(), Some(3));
-        assert_eq!(array.backend_len(), 4);
+        assert_eq!(stack.pop(), Some(3));
+        assert_eq!(stack.backend_len(), 4);
 
-        assert_eq!(array.pop(), Some(2));
-        assert_eq!(array.pop(), Some(1));
+        assert_eq!(stack.pop(), Some(2));
+        assert_eq!(stack.pop(), Some(1));
 
-        assert_eq!(array.size(), 0);
-        assert_eq!(array.backend_len(), 1);
+        assert_eq!(stack.size(), 0);
+        assert_eq!(stack.backend_len(), 1);
     }
 
-    fn check<T>(array: &ArrayStack<T>, items: Vec<(usize, Option<&T>)>)
+    fn check<T>(stack: &ArrayStack<T>, items: Vec<(usize, Option<&T>)>)
     where
         T: std::fmt::Debug + std::cmp::PartialEq,
     {
         for (i, entry) in items.iter() {
-            assert_eq!(array.get(*i), *entry);
+            assert_eq!(stack.get(*i), *entry);
         }
     }
 }
