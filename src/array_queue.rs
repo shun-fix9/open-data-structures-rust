@@ -1,7 +1,7 @@
 use crate::backend::{Array, Entry};
 use crate::CollectionError;
 use crate::OUT_OF_BOUND_ERROR;
-use crate::{List, Stack};
+use crate::{List, Queue};
 
 const DEFAULT_BACKEND_SIZE: usize = 2;
 const SIZE_UP_MULTIPLIER_NUMBER: usize = 2;
@@ -9,25 +9,31 @@ const SIZE_DOWN_THRESHOLD: usize = 3;
 const SIZE_DOWN_DIVISION_NUMBER: usize = 2;
 
 #[derive(Debug)]
-pub struct ArrayStack<T> {
+pub struct ArrayQueue<T> {
     backend: Array<T>,
     size: usize,
+    index: usize,
 }
 
-impl<T> ArrayStack<T> {
-    pub fn new() -> ArrayStack<T> {
-        ArrayStack {
+impl<T> ArrayQueue<T> {
+    pub fn new() -> ArrayQueue<T> {
+        ArrayQueue {
             backend: Array::new(DEFAULT_BACKEND_SIZE),
             size: 0,
+            index: 0,
         }
     }
 
     fn backend_len(&self) -> usize {
         self.backend.len()
     }
+
+    fn backend_index(&self, index: usize) -> usize {
+        (index + self.index) % self.backend_len()
+    }
 }
 
-impl<T> List<T> for ArrayStack<T> {
+impl<T> List<T> for ArrayQueue<T> {
     fn size(&self) -> usize {
         self.size
     }
@@ -37,7 +43,7 @@ impl<T> List<T> for ArrayStack<T> {
             return None;
         }
 
-        match self.backend.get(index) {
+        match self.backend.get(self.backend_index(index)) {
             Some(Entry::Item(item)) => Some(item),
             _ => unreachable!(),
         }
@@ -48,7 +54,7 @@ impl<T> List<T> for ArrayStack<T> {
             return Err(OUT_OF_BOUND_ERROR);
         }
 
-        match self.backend.set(index, item) {
+        match self.backend.set(self.backend_index(index), item) {
             Ok(()) => Ok(()),
             _ => unreachable!(),
         }
@@ -63,7 +69,8 @@ impl<T> List<T> for ArrayStack<T> {
             self.size_up();
         }
 
-        self.shift_right_from(index);
+        self.shift_right(index, self.size());
+        self.size += 1;
 
         self.set(index, item)
     }
@@ -73,9 +80,11 @@ impl<T> List<T> for ArrayStack<T> {
             return None;
         }
 
-        match self.backend.remove(index) {
+        match self.backend.remove(self.backend_index(index)) {
             Some(Entry::Item(item)) => {
-                self.shift_left_to(index);
+                self.shift_right(0, index);
+                self.index = self.backend_index(1);
+                self.size -= 1;
 
                 if self.is_size_down_required() {
                     self.size_down();
@@ -88,20 +97,20 @@ impl<T> List<T> for ArrayStack<T> {
     }
 }
 
-impl<T> Stack<T> for ArrayStack<T> {
-    fn push(&mut self, x: T) {
+impl<T> Queue<T> for ArrayQueue<T> {
+    fn enqueue(&mut self, x: T) {
         match self.add(self.size(), x) {
             Ok(()) => (),
             _ => unreachable!(),
         }
     }
 
-    fn pop(&mut self) -> Option<T> {
-        self.remove(self.size() - 1)
+    fn dequeue(&mut self) -> Option<T> {
+        self.remove(0)
     }
 }
 
-impl<T> ArrayStack<T> {
+impl<T> ArrayQueue<T> {
     fn is_size_up_required(&self) -> bool {
         self.size() == self.backend_len()
     }
@@ -113,53 +122,50 @@ impl<T> ArrayStack<T> {
     fn size_up(&mut self) {
         self.backend.resize(
             self.backend_len() * SIZE_UP_MULTIPLIER_NUMBER,
-            0,
+            self.index,
             self.size(),
         );
+        self.index = 0;
     }
 
     fn size_down(&mut self) {
         self.backend.resize(
             self.backend_len() / SIZE_DOWN_DIVISION_NUMBER,
-            0,
+            self.index,
             self.size(),
         );
+        self.index = 0;
     }
 
-    fn shift_right_from(&mut self, index: usize) {
-        self.backend.shift_right(index, self.size());
-        self.size += 1;
-    }
-
-    fn shift_left_to(&mut self, index: usize) {
-        self.backend.shift_left(index, self.size());
-        self.size -= 1;
+    fn shift_right(&mut self, from: usize, to: usize) {
+        self.backend
+            .shift_right(self.backend_index(from), self.backend_index(to));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ArrayStack;
+    use super::ArrayQueue;
     use crate::List;
-    use crate::Stack;
+    use crate::Queue;
 
     #[test]
-    pub fn stack() {
-        let mut stack = ArrayStack::new();
-        assert_eq!(stack.size(), 0);
-        assert_eq!(stack.backend_len(), 2);
+    pub fn queue() {
+        let mut queue = ArrayQueue::new();
+        assert_eq!(queue.size(), 0);
+        assert_eq!(queue.backend_len(), 2);
 
-        stack.push(1);
-        stack.push(2);
-        stack.push(3);
-        stack.push(4);
-        stack.push(5);
+        queue.enqueue(1);
+        queue.enqueue(2);
+        queue.enqueue(3);
+        queue.enqueue(4);
+        queue.enqueue(5);
 
-        assert_eq!(stack.size(), 5);
-        assert_eq!(stack.backend_len(), 8);
+        assert_eq!(queue.size(), 5);
+        assert_eq!(queue.backend_len(), 8);
 
         check(
-            &stack,
+            &queue,
             vec![
                 (0, Some(&1)),
                 (1, Some(&2)),
@@ -170,39 +176,39 @@ mod tests {
             ],
         );
 
-        assert_eq!(stack.pop(), Some(5));
-        assert_eq!(stack.pop(), Some(4));
+        assert_eq!(queue.dequeue(), Some(1));
+        assert_eq!(queue.dequeue(), Some(2));
 
-        assert_eq!(stack.size(), 3);
+        assert_eq!(queue.size(), 3);
 
         check(
-            &stack,
+            &queue,
             vec![
-                (0, Some(&1)),
-                (1, Some(&2)),
-                (2, Some(&3)),
+                (0, Some(&3)),
+                (1, Some(&4)),
+                (2, Some(&5)),
                 (3, None),
                 (4, None),
                 (5, None),
             ],
         );
 
-        assert_eq!(stack.pop(), Some(3));
-        assert_eq!(stack.backend_len(), 4);
+        assert_eq!(queue.dequeue(), Some(3));
+        assert_eq!(queue.backend_len(), 4);
 
-        assert_eq!(stack.pop(), Some(2));
-        assert_eq!(stack.pop(), Some(1));
+        assert_eq!(queue.dequeue(), Some(4));
+        assert_eq!(queue.dequeue(), Some(5));
 
-        assert_eq!(stack.size(), 0);
-        assert_eq!(stack.backend_len(), 1);
+        assert_eq!(queue.size(), 0);
+        assert_eq!(queue.backend_len(), 1);
     }
 
-    fn check<T>(stack: &ArrayStack<T>, items: Vec<(usize, Option<&T>)>)
+    fn check<T>(queue: &ArrayQueue<T>, items: Vec<(usize, Option<&T>)>)
     where
         T: std::fmt::Debug + std::cmp::PartialEq,
     {
         for (i, entry) in items.iter() {
-            assert_eq!(stack.get(*i), *entry);
+            assert_eq!(queue.get(*i), *entry);
         }
     }
 }

@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
+pub mod array_queue;
 pub mod array_stack;
 mod backend;
 
