@@ -1,7 +1,7 @@
 use crate::backend::{Array, Entry};
 use crate::CollectionError;
 use crate::OUT_OF_BOUND_ERROR;
-use crate::{List, Queue};
+use crate::{Deque, List};
 
 const DEFAULT_BACKEND_SIZE: usize = 2;
 const SIZE_UP_MULTIPLIER_NUMBER: usize = 2;
@@ -9,15 +9,15 @@ const SIZE_DOWN_THRESHOLD: usize = 3;
 const SIZE_DOWN_DIVISION_NUMBER: usize = 2;
 
 #[derive(Debug)]
-pub struct ArrayQueue<T> {
+pub struct ArrayDeque<T> {
     backend: Array<T>,
     size: usize,
     index: usize,
 }
 
-impl<T> ArrayQueue<T> {
-    pub fn new() -> ArrayQueue<T> {
-        ArrayQueue {
+impl<T> ArrayDeque<T> {
+    pub fn new() -> ArrayDeque<T> {
+        ArrayDeque {
             backend: Array::new(DEFAULT_BACKEND_SIZE),
             size: 0,
             index: 0,
@@ -31,9 +31,13 @@ impl<T> ArrayQueue<T> {
     fn backend_index(&self, index: usize) -> usize {
         (index + self.index) % self.backend_len()
     }
+
+    fn is_first_half(&self, index: usize) -> bool {
+        index < self.size() / 2
+    }
 }
 
-impl<T> List<T> for ArrayQueue<T> {
+impl<T> List<T> for ArrayDeque<T> {
     fn size(&self) -> usize {
         self.size
     }
@@ -69,7 +73,13 @@ impl<T> List<T> for ArrayQueue<T> {
             self.size_up();
         }
 
-        self.shift_right(index, self.size());
+        if self.is_first_half(index) {
+            self.shift_left(self.backend_len() - 1, index + self.backend_len() - 1);
+            self.index = self.backend_index(self.backend_len() - 1);
+        } else {
+            self.shift_right(index, self.size());
+        }
+
         self.size += 1;
 
         self.set(index, item)
@@ -82,8 +92,13 @@ impl<T> List<T> for ArrayQueue<T> {
 
         match self.backend.remove(self.backend_index(index)) {
             Some(Entry::Item(item)) => {
-                self.shift_right(0, index);
-                self.index = self.backend_index(1);
+                if self.is_first_half(index) {
+                    self.shift_right(0, index);
+                    self.index = self.backend_index(1);
+                } else {
+                    self.shift_left(index, self.size());
+                }
+
                 self.size -= 1;
 
                 if self.is_size_down_required() {
@@ -97,20 +112,31 @@ impl<T> List<T> for ArrayQueue<T> {
     }
 }
 
-impl<T> Queue<T> for ArrayQueue<T> {
-    fn enqueue(&mut self, x: T) {
+impl<T> Deque<T> for ArrayDeque<T> {
+    fn addFirst(&mut self, x: T) {
+        match self.add(0, x) {
+            Ok(()) => (),
+            _ => unreachable!(),
+        }
+    }
+
+    fn addLast(&mut self, x: T) {
         match self.add(self.size(), x) {
             Ok(()) => (),
             _ => unreachable!(),
         }
     }
 
-    fn dequeue(&mut self) -> Option<T> {
+    fn removeFirst(&mut self) -> Option<T> {
         self.remove(0)
+    }
+
+    fn removeLast(&mut self) -> Option<T> {
+        self.remove(self.size() - 1)
     }
 }
 
-impl<T> ArrayQueue<T> {
+impl<T> ArrayDeque<T> {
     fn is_size_up_required(&self) -> bool {
         self.size() == self.backend_len()
     }
@@ -141,50 +167,55 @@ impl<T> ArrayQueue<T> {
         self.backend
             .shift_right(self.backend_index(from), self.backend_index(to));
     }
+
+    fn shift_left(&mut self, from: usize, to: usize) {
+        self.backend
+            .shift_left(self.backend_index(from), self.backend_index(to));
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::ArrayQueue;
+    use super::ArrayDeque;
+    use crate::Deque;
     use crate::List;
-    use crate::Queue;
 
     #[test]
-    pub fn queue() {
-        let mut queue = ArrayQueue::new();
-        assert_eq!(queue.size(), 0);
+    pub fn deque() {
+        let mut deque = ArrayDeque::new();
+        assert_eq!(deque.size(), 0);
 
-        queue.enqueue(1);
-        queue.enqueue(2);
-        queue.enqueue(3);
-        queue.enqueue(4);
-        queue.enqueue(5);
+        deque.addLast(1);
+        deque.addLast(2);
+        deque.addLast(3);
+        deque.addFirst(4);
+        deque.addFirst(5);
 
-        assert_eq!(queue.size(), 5);
+        assert_eq!(deque.size(), 5);
 
-        assert_eq!(queue.get(0), Some(&1));
-        assert_eq!(queue.get(1), Some(&2));
-        assert_eq!(queue.get(2), Some(&3));
-        assert_eq!(queue.get(3), Some(&4));
-        assert_eq!(queue.get(4), Some(&5));
-        assert_eq!(queue.get(5), None);
+        assert_eq!(deque.get(0), Some(&5));
+        assert_eq!(deque.get(1), Some(&4));
+        assert_eq!(deque.get(2), Some(&1));
+        assert_eq!(deque.get(3), Some(&2));
+        assert_eq!(deque.get(4), Some(&3));
+        assert_eq!(deque.get(5), None);
 
-        assert_eq!(queue.dequeue(), Some(1));
-        assert_eq!(queue.dequeue(), Some(2));
+        assert_eq!(deque.removeLast(), Some(3));
+        assert_eq!(deque.removeLast(), Some(2));
 
-        assert_eq!(queue.size(), 3);
+        assert_eq!(deque.size(), 3);
 
-        assert_eq!(queue.get(0), Some(&3));
-        assert_eq!(queue.get(1), Some(&4));
-        assert_eq!(queue.get(2), Some(&5));
-        assert_eq!(queue.get(3), None);
-        assert_eq!(queue.get(4), None);
-        assert_eq!(queue.get(5), None);
+        assert_eq!(deque.get(0), Some(&5));
+        assert_eq!(deque.get(1), Some(&4));
+        assert_eq!(deque.get(2), Some(&1));
+        assert_eq!(deque.get(3), None);
+        assert_eq!(deque.get(4), None);
+        assert_eq!(deque.get(5), None);
 
-        assert_eq!(queue.dequeue(), Some(3));
-        assert_eq!(queue.dequeue(), Some(4));
-        assert_eq!(queue.dequeue(), Some(5));
+        assert_eq!(deque.removeFirst(), Some(5));
+        assert_eq!(deque.removeFirst(), Some(4));
+        assert_eq!(deque.removeFirst(), Some(1));
 
-        assert_eq!(queue.size(), 0);
+        assert_eq!(deque.size(), 0);
     }
 }

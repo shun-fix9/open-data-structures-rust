@@ -136,17 +136,12 @@ mod tests {
 
         assert_eq!(array.len(), length);
 
-        check(
-            &array,
-            vec![
-                (0, Some(&Entry::Empty)),
-                (1, Some(&Entry::Empty)),
-                (2, Some(&Entry::Empty)),
-                (3, Some(&Entry::Empty)),
-                (4, Some(&Entry::Empty)),
-                (5, None),
-            ],
-        );
+        assert_eq!(array.get(0), Some(&Entry::Empty));
+        assert_eq!(array.get(1), Some(&Entry::Empty));
+        assert_eq!(array.get(2), Some(&Entry::Empty));
+        assert_eq!(array.get(3), Some(&Entry::Empty));
+        assert_eq!(array.get(4), Some(&Entry::Empty));
+        assert_eq!(array.get(5), None);
     }
 
     #[test]
@@ -162,17 +157,12 @@ mod tests {
 
         assert_eq!(array.set(5, 6), Err(super::OUT_OF_BOUND_ERROR));
 
-        check(
-            &array,
-            vec![
-                (0, Some(&Entry::Item(1))),
-                (1, Some(&Entry::Item(2))),
-                (2, Some(&Entry::Item(3))),
-                (3, Some(&Entry::Item(4))),
-                (4, Some(&Entry::Item(5))),
-                (5, None),
-            ],
-        );
+        assert_eq!(array.get(0), Some(&Entry::Item(1)));
+        assert_eq!(array.get(1), Some(&Entry::Item(2)));
+        assert_eq!(array.get(2), Some(&Entry::Item(3)));
+        assert_eq!(array.get(3), Some(&Entry::Item(4)));
+        assert_eq!(array.get(4), Some(&Entry::Item(5)));
+        assert_eq!(array.get(5), None);
     }
 
     #[test]
@@ -190,17 +180,12 @@ mod tests {
 
         assert_eq!(array.remove(2), Some(Entry::Item(3)));
 
-        check(
-            &array,
-            vec![
-                (0, Some(&Entry::Item(1))),
-                (1, Some(&Entry::Item(2))),
-                (2, Some(&Entry::Empty)),
-                (3, Some(&Entry::Item(4))),
-                (4, Some(&Entry::Item(5))),
-                (5, None),
-            ],
-        );
+        assert_eq!(array.get(0), Some(&Entry::Item(1)));
+        assert_eq!(array.get(1), Some(&Entry::Item(2)));
+        assert_eq!(array.get(2), Some(&Entry::Empty));
+        assert_eq!(array.get(3), Some(&Entry::Item(4)));
+        assert_eq!(array.get(4), Some(&Entry::Item(5)));
+        assert_eq!(array.get(5), None);
     }
 
     #[test]
@@ -214,17 +199,12 @@ mod tests {
 
         array.shift_right(2, 4);
 
-        check(
-            &array,
-            vec![
-                (0, Some(&Entry::Item(1))),
-                (1, Some(&Entry::Item(2))),
-                (2, Some(&Entry::Empty)),
-                (3, Some(&Entry::Item(3))),
-                (4, Some(&Entry::Empty)),
-                (5, None),
-            ],
-        );
+        assert_eq!(array.get(0), Some(&Entry::Item(1)));
+        assert_eq!(array.get(1), Some(&Entry::Item(2)));
+        assert_eq!(array.get(2), Some(&Entry::Empty));
+        assert_eq!(array.get(3), Some(&Entry::Item(3)));
+        assert_eq!(array.get(4), Some(&Entry::Empty));
+        assert_eq!(array.get(5), None);
     }
 
     #[test]
@@ -238,17 +218,12 @@ mod tests {
 
         array.shift_left(2, 4);
 
-        check(
-            &array,
-            vec![
-                (0, Some(&Entry::Item(1))),
-                (1, Some(&Entry::Item(2))),
-                (2, Some(&Entry::Item(3))),
-                (3, Some(&Entry::Empty)),
-                (4, Some(&Entry::Empty)),
-                (5, None),
-            ],
-        );
+        assert_eq!(array.get(0), Some(&Entry::Item(1)));
+        assert_eq!(array.get(1), Some(&Entry::Item(2)));
+        assert_eq!(array.get(2), Some(&Entry::Item(3)));
+        assert_eq!(array.get(3), Some(&Entry::Empty));
+        assert_eq!(array.get(4), Some(&Entry::Empty));
+        assert_eq!(array.get(5), None);
     }
 
     #[test]
@@ -269,24 +244,10 @@ mod tests {
 
         assert_eq!(array.len(), new_size);
 
-        check(
-            &array,
-            vec![
-                (0, Some(&Entry::Item(1))),
-                (1, Some(&Entry::Item(2))),
-                (2, Some(&Entry::Empty)),
-                (3, Some(&Entry::Empty)),
-                (4, None),
-            ],
-        );
-    }
-
-    fn check<T>(array: &Array<T>, items: Vec<(usize, Option<&Entry<T>>)>)
-    where
-        T: std::fmt::Debug + std::cmp::PartialEq,
-    {
-        for (i, entry) in items.iter() {
-            assert_eq!(array.get(*i), *entry);
-        }
+        assert_eq!(array.get(0), Some(&Entry::Item(1)));
+        assert_eq!(array.get(1), Some(&Entry::Item(2)));
+        assert_eq!(array.get(2), Some(&Entry::Empty));
+        assert_eq!(array.get(3), Some(&Entry::Empty));
+        assert_eq!(array.get(4), None);
     }
 }
