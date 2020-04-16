@@ -64,6 +64,7 @@ impl<T> List<T> for ArrayStack<T> {
         }
 
         self.shift_right_from(index);
+        self.size += 1;
 
         self.set(index, item)
     }
@@ -76,6 +77,7 @@ impl<T> List<T> for ArrayStack<T> {
         match self.backend.remove(index) {
             Some(Entry::Item(item)) => {
                 self.shift_left_to(index);
+                self.size -= 1;
 
                 if self.is_size_down_required() {
                     self.size_down();
@@ -128,12 +130,10 @@ impl<T> ArrayStack<T> {
 
     fn shift_right_from(&mut self, index: usize) {
         self.backend.shift_right(index, self.size());
-        self.size += 1;
     }
 
     fn shift_left_to(&mut self, index: usize) {
         self.backend.shift_left(index, self.size());
-        self.size -= 1;
     }
 }
 
