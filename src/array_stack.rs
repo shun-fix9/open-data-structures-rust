@@ -24,7 +24,8 @@ impl<T> ArrayStack<T> {
         }
     }
 
-    pub fn backend_len(&self) -> usize {
+    #[allow(dead_code)]
+    fn backend_len(&self) -> usize {
         self.array.len()
     }
 }
