@@ -72,9 +72,7 @@ impl<T> List<T> for ArrayStack<T> {
 
         match self.array.set(index, item) {
             Ok(()) => Ok(()),
-            Err(err) => Err(CollectionError {
-                message: err.message(),
-            }),
+            _ => unreachable!(),
         }
     }
 
