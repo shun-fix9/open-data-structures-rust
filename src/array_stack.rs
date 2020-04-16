@@ -62,17 +62,13 @@ impl<T> List<T> for ArrayStack<T> {
             return Err(OUT_OF_BOUND_ERROR);
         }
 
-        if self.size() == self.array.len() {
+        if self.is_size_up_required() {
             self.size_up();
         }
 
-        self.array.shift_right(index, self.size());
-        self.size += 1;
+        self.shift_right_from(index);
 
-        match self.array.set(index, item) {
-            Ok(()) => Ok(()),
-            _ => unreachable!(),
-        }
+        self.set(index, item)
     }
 
     fn remove(&mut self, index: usize) -> Option<T> {
@@ -82,10 +78,9 @@ impl<T> List<T> for ArrayStack<T> {
 
         match self.array.remove(index) {
             Some(Entry::Item(item)) => {
-                self.array.shift_left(index, self.size());
-                self.size -= 1;
+                self.shift_left_to(index);
 
-                if self.size() * SIZE_DOWN_THRESHOLD < self.array.len() {
+                if self.is_size_down_required() {
                     self.size_down();
                 }
 
@@ -110,6 +105,14 @@ impl<T> Stack<T> for ArrayStack<T> {
 }
 
 impl<T> ArrayStack<T> {
+    fn is_size_up_required(&self) -> bool {
+        self.size() == self.array.len()
+    }
+
+    fn is_size_down_required(&self) -> bool {
+        self.size() * SIZE_DOWN_THRESHOLD < self.array.len()
+    }
+
     fn size_up(&mut self) {
         self.array
             .resize(self.size(), self.array.len() * SIZE_UP_MULTIPLIER_FACTOR);
@@ -118,6 +121,16 @@ impl<T> ArrayStack<T> {
     fn size_down(&mut self) {
         self.array
             .resize(self.size(), self.array.len() / SIZE_DOWN_DIVISION_FACTOR);
+    }
+
+    fn shift_right_from(&mut self, index: usize) {
+        self.array.shift_right(index, self.size());
+        self.size += 1;
+    }
+
+    fn shift_left_to(&mut self, index: usize) {
+        self.array.shift_left(index, self.size());
+        self.size -= 1;
     }
 }
 
